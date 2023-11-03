@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-
+xrandr --output Virtual-1 --mode 1920x1080
 slstatus &
 ~/.fehbg
+picom -b
 exec dwm

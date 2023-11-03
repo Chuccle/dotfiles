@@ -11,7 +11,7 @@
 ;; used in this configuration.
 (use-modules (gnu)
              (gnu services xorg)
-             (chucc-dwm)
+             (chuccle-channel environment chuccle-de)
 )
 
 (use-service-modules cups desktop networking ssh xorg)
@@ -36,9 +36,10 @@
 
   (packages (append (list
                      emacs
-		     st
-		     chucc-dwm
-         sx
+		                 chuccle-st
+		                 chuccle-dwm
+                     chuccle-dmenu
+                     sx
                      slstatus
                      (specification->package "nss-certs"))
                    %base-packages))
