@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # edit this file to modify home 
-
+xrandr --output Virtual-1 --mode 1920x1080
 ~/.fehbg
 slstatus &
 exec dwm

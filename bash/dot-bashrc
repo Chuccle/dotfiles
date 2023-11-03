@@ -1,7 +1,3 @@
-alias grep="grep --color=auto"
-alias ip="ip -color=auto"
-alias ll="ls -l"
-alias ls="ls -p -a --color=auto"
 # Bash initialization for interactive non-login shells and
 # for remote shells (info "(bash) Bash Startup Files").
 
@@ -31,24 +27,6 @@ alias ip='ip -color=auto'
 # Source the system-wide file.
 [ -f /etc/bashrc ] && source /etc/bashrc
 
-# Bash initialization for interactive non-login shells and
-# for remote shells (info "(bash) Bash Startup Files").
-
-# Export 'SHELL' to child processes.  Programs such as 'screen'
-# honor it and otherwise use /bin/sh.
-export SHELL
-
-if [[ $- != *i* ]]
-then
-    # We are being invoked from a non-interactive shell.  If this
-    # is an SSH session (as in "ssh host command"), source
-    # /etc/profile so we get PATH and other essential variables.
-    [[ -n "$SSH_CLIENT" ]] && source /etc/profile
-
-    # Don't do anything else.
-    return
-fi
-
 # Adjust the prompt depending on whether we're in 'guix environment'.
 if [ -n "$GUIX_ENVIRONMENT" ]
 then
@@ -56,10 +34,5 @@ then
 else
     PS1='\u@\h \w\$ '
 fi
-alias ls='ls -p --color=auto'
-alias ll='ls -l'
-alias grep='grep --color=auto'
-
-export GUIX_PACKAGE_PATH="$HOME/DWM_MODULE:$GUIX_PACKAGE_PATH"
 
 

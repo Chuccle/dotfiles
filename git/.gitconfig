@@ -1,0 +1,5 @@
+[user]
+	email = charlie11cohen@gmail.com
+	name = Chuccle
+[credential]
+    helper = !type pass-git-helper >/dev/null && pass-git-helper $@
