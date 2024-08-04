@@ -1,0 +1,819 @@
+From eebf8dfcc9b9a2cd6f6d61572d1fdfc409c94bd3 Mon Sep 17 00:00:00 2001
+From: Chuccle <charlie11cohen@gmail.com>
+Date: Sun, 4 Aug 2024 08:15:23 +0100
+Subject: [PATCH] Sorted to be more guixed
+
+---
+ channelconfig/.config/guix/channels.scm                          |  21 +++++++++++++++++++++
+ git/.gitconfig => git-stuff/.gitconfig                           |   2 --
+ homeconfig/home-configuration.scm                                | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ pass-git-helper/.config/pass-git-helper/git-pass-mapping.ini     |   2 --
+ picom/.config/picom/picom.conf                                   | 514 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ sx/.config/sx/sxrc                                               |   6 ------
+ systemconfig/config.scm                                          |  43 ++++++++++++++-----------------------------
+ xsession/dot-xsession                                            |   7 -------
+ 8 files changed, 151 insertions(+), 560 deletions(-)
+ create mode 100644 channelconfig/.config/guix/channels.scm
+ create mode 100644 homeconfig/home-configuration.scm
+ delete mode 100644 pass-git-helper/.config/pass-git-helper/git-pass-mapping.ini
+ delete mode 100644 picom/.config/picom/picom.conf
+ delete mode 100755 sx/.config/sx/sxrc
+ mode change 100755 => 100644 systemconfig/config.scm
+ delete mode 100755 xsession/dot-xsession
+
+diff --git a/channelconfig/.config/guix/channels.scm b/channelconfig/.config/guix/channels.scm
+new file mode 100644
+index 0000000..5196c14
+--- /dev/null
++++ b/channelconfig/.config/guix/channels.scm
+@@ -0,0 +1,21 @@
++(cons* (channel
++       (name 'home-service-dwl-guile)
++       (url "https://github.com/engstrand-config/home-service-dwl-guile")
++       (branch "main")
++       (introduction
++       (make-channel-introduction
++        "314453a87634d67e914cfdf51d357638902dd9fe"
++        (openpgp-fingerprint
++         "C9BE B8A0 4458 FDDF 1268 1B39 029D 8EB7 7E18 D68C"))))
++      
++      (channel
++       (name 'home-service-dtao-guile)
++       (url "https://github.com/engstrand-config/home-service-dtao-guile")
++       (branch "main")
++       (introduction
++        (make-channel-introduction
++         "64d0b70c547095ddc840dd07424b9a46ccc2e64e"
++         (openpgp-fingerprint
++          "C9BE B8A0 4458 FDDF 1268 1B39 029D 8EB7 7E18 D68C"))))
++      %default-channels)
++        
+diff --git a/git/.gitconfig b/git-stuff/.gitconfig
+similarity index 75%
+rename from git/.gitconfig
+rename to git-stuff/.gitconfig
+index 9f6f319..22b3a80 100644
+--- a/git/.gitconfig
++++ b/git-stuff/.gitconfig
+@@ -1,5 +1,3 @@
+ [user]
+ 	email = charlie11cohen@gmail.com
+ 	name = Chuccle
+-[credential]
+-    helper = !type pass-git-helper >/dev/null && pass-git-helper $@
+diff --git a/homeconfig/home-configuration.scm b/homeconfig/home-configuration.scm
+new file mode 100644
+index 0000000..7f3953e
+--- /dev/null
++++ b/homeconfig/home-configuration.scm
+@@ -0,0 +1,116 @@
++;; This "home-environment" file can be passed to 'guix home reconfigure'
++;; to reproduce the content of your profile.  This is "symbolic": it only
++;; specifies package names.  To reproduce the exact same profile, you also
++;; need to capture the channels being used, as returned by "guix describe".
++;; See the "Replicating Guix" section in the manual.
++
++(use-modules (gnu home)
++             (gnu packages)
++             (gnu services)
++             (guix gexp)
++             (gnu home services shells)
++             (dwl-guile home-service)
++             (dwl-guile patches)
++             (dtao-guile home-service))
++
++(home-environment
++  ;; Below is the list of packages that will show up in your
++  ;; Home profile, under ~/.guix-home/profile.
++  (packages (specifications->packages (list "emacs"
++                                            "foot"
++                                            "font-fira-code"
++                                            "font-openmoji"
++                                            "stow"
++                                            "make"
++                                            "git")))
++
++  ;; Below is the list of Home services.  To search for available
++  ;; services, run 'guix home search KEYWORD' in a terminal.
++  (services
++   (list 
++                                                  
++    ;; Create and add the dwl-guile home service to your home configuration.
++    (service home-dwl-guile-service-type
++             ;; If you wish to configure the home service further, you can pass in
++             ;; a configuration to the service. All options listed below are optional.
++             (home-dwl-guile-configuration
++              ;; If you want to dynamically apply patches, you can create a new
++              ;; modified package definition (multiple patches can be applied).
++              ;; Note that some patches might have conflicts.
++              ;;
++              ;; (package
++              ;;  (patch-dwl-guile-package dwl-guile
++              ;;                           #:patches (list %patch-xwayland)))
++
++              ;; Environment variables to set for Wayland compatibility with applications.
++              ;; By default, native Wayland rendering will be enabled for most applications.
++              ;; Native rendering of QT-applications is enabled using the @code{native-qt?}
++              ;; option. This is because it requires the qtwayland package.
++              ;;
++              ;; Set it to an empty list to skip setting environment variables:
++              ;; (environment-variables '())
++              ;;
++              ;; Or extend the default environment variables:
++              ;; (environment-variables
++              ;;  (append `(("var" . "value")) %dwl-guile-base-env-variables))
++
++              ;; A string containing a command to execute after starting dwl-guile.
++              ;; This is the equivalent of specifying a script to the '-s' flag of dwl.
++              ;; The gexp's will be executed in the same order as in the list.
++              ;;
++              ;; The preferred way of running commands/applications (that does not need
++              ;; to access the stdout of dwl) on startup is by using the
++              ;; dwl:startup-hook in your Guile config.
++              ;;
++              ;; By default, this option is not used.
++              (startup-command "foot --server <&-")
++
++              ;; If QT-applications should be rendered natively. Enabled by default.
++              ;; This will set QT_QPA_PLATFORM="wayland-egl" and install
++              ;; the "qtwayland" package to enable support for Wayland.
++              (native-qt? #t)
++
++              ;; If dwl-guile should auto-start on first login. Enabled by default.
++              (auto-start? #t)
++
++              ;; If the dwl-guile config should be automatically reloaded on change.
++              ;; This will allow you to see (most of) the effects of your config changes
++              ;; dynamically, without restarting dwl-guile.
++              (reload-config-on-change? #t)
++
++              ;; Create a custom configuration for dwl.
++              (config '())))
++              
++              ;; Create and add the dtao-guile home service to your home configuration.
++    (service home-dtao-guile-service-type
++             (home-dtao-guile-configuration
++              ;; Start dtao-guile on login, defaults to true.
++              (auto-start? #t)
++              ;; Create a custom configuration for dtao.
++              (config (dtao-config
++                         ;; A font string in fcft format.
++                         (font "monospace:style=bold:size=12")
++                         (background-color "111111AA")
++                         (border-color "333333FF")
++                         (foreground-color "FFFFFFFF")
++                         (padding-left 8)
++                         (padding-right 8)
++                         (padding-top 2)
++                         (padding-bottom 2)
++                         ;; Request an exclusive zone for the bar to prevent overlapping.
++                         (exclusive? #t)
++                         ;; Layer to render the bar in (LAYER-TOP, LAYER-BOTTOM, LAYER-OVERLAY, LAYER-BACKGROUND).
++                         (layer 'LAYER-BOTTOM)
++                         ;; Render the bar at the bottom of the screen.
++                         (bottom? #f)
++                         ;; Height of the bar in pixels. Set to #f for automatic height based on font size.
++                         (height #f)
++                         ;; Additional spacing on each side of the delimiter string.
++                         (block-spacing 0)
++                         (left-blocks '())
++                         (center-blocks '())
++                         (right-blocks '())
++                         ;; List of Guile module dependencies needed to run your blocks.
++                         (modules '()))))))))
++              
++              ;; https://github.com/engstrand-config/home-service-dtao-guile for more config
+diff --git a/pass-git-helper/.config/pass-git-helper/git-pass-mapping.ini b/pass-git-helper/.config/pass-git-helper/git-pass-mapping.ini
+deleted file mode 100644
+index 6548c1a..0000000
+--- a/pass-git-helper/.config/pass-git-helper/git-pass-mapping.ini
++++ /dev/null
+@@ -1,2 +0,0 @@
+-[github.com*]
+-target=dev/github.com
+\ No newline at end of file
+diff --git a/picom/.config/picom/picom.conf b/picom/.config/picom/picom.conf
+deleted file mode 100644
+index b05cd65..0000000
+--- a/picom/.config/picom/picom.conf
++++ /dev/null
+@@ -1,514 +0,0 @@
+-# Pretty much copied from Axarva's configs
+-
+-#################################
+-#             Corners           #
+-#################################
+-# requires: https://github.com/sdhand/compton
+-corner-radius = 8;
+-rounded-corners-exclude = [
+-  #"window_type = 'toolbar'",
+-  "class_g = 'eww-bar'",
+-  "class_g = 'eww-powermenu'",
+-  "class_g = 'Rofi'",
+-  #"class_g = 'Tint2'",
+-  "name = 'Notification area'",
+-  #"class_g = 'kitty'",
+-  #"class_g = 'Alacritty'",
+-  "class_g = 'Polybar'",
+-  "class_g = 'code-oss'",
+-  "class_g = 'firefox'",
+-  "class_g = 'Thunderbird'",
+-  "class_g = 'Eww'",
+-];
+-round-borders = 1;
+-round-borders-exclude = [
+-  #"class_g = 'TelegramDesktop'",
+-];
+-
+-# Specify a list of border width rules, in the format `PIXELS:PATTERN`, 
+-# Note we don't make any guarantee about possible conflicts with the
+-# border_width set by the window manager.
+-#
+-# example:
+-#    round-borders-rule = [ "2:class_g = 'URxvt'" ];
+-#
+-round-borders-rule = [
+-  "3:class_g      = 'XTerm'",
+-  "3:class_g      = 'URxvt'",
+-  #"10:class_g     = 'Alacritty'",
+-  "15:class_g     = 'Signal'"
+-];
+-
+-#################################
+-#             Shadows           #
+-#################################
+-
+-
+-# Enabled client-side shadows on windows. Note desktop windows 
+-# (windows with '_NET_WM_WINDOW_TYPE_DESKTOP') never get shadow, 
+-# unless explicitly requested using the wintypes option.
+-#
+-#shadow = false
+-shadow = false;
+-
+-# The blur radius for shadows, in pixels. (defaults to 12)
+-# shadow-radius = 12
+-shadow-radius = 12;
+-
+-# The opacity of shadows. (0.0 - 1.0, defaults to 0.75)
+-shadow-opacity = 0.75
+-
+-# The left offset for shadows, in pixels. (defaults to -15)
+-# shadow-offset-x = -15
+-shadow-offset-x = -15;
+-
+-# The top offset for shadows, in pixels. (defaults to -15)
+-# shadow-offset-y = -15
+-shadow-offset-y = -15;
+-
+-# Avoid drawing shadows on dock/panel windows. This option is deprecated,
+-# you should use the *wintypes* option in your config file instead.
+-#
+-# no-dock-shadow = false
+-
+-# Don't draw shadows on drag-and-drop windows. This option is deprecated, 
+-# you should use the *wintypes* option in your config file instead.
+-#
+-# no-dnd-shadow = false
+-
+-# Red color value of shadow (0.0 - 1.0, defaults to 0).
+-# shadow-red = 0
+-
+-# Green color value of shadow (0.0 - 1.0, defaults to 0).
+-# shadow-green = 0
+-
+-# Blue color value of shadow (0.0 - 1.0, defaults to 0).
+-# shadow-blue = 0
+-
+-# Do not paint shadows on shaped windows. Note shaped windows 
+-# here means windows setting its shape through X Shape extension. 
+-# Those using ARGB background is beyond our control. 
+-# Deprecated, use 
+-#   shadow-exclude = 'bounding_shaped'
+-# or 
+-#   shadow-exclude = 'bounding_shaped && !rounded_corners'
+-# instead.
+-#
+-# shadow-ignore-shaped = ''
+-
+-# Specify a list of conditions of windows that should have no shadow.
+-#
+-# examples:
+-#   shadow-exclude = "n:e:Notification";
+-#
+-# shadow-exclude = []
+-shadow-exclude = [
+-  "name = 'Notification'",
+-  "class_g = 'Conky'",
+-  "class_g ?= 'Notify-osd'",
+-  "class_g = 'Cairo-clock'",
+-  "class_g = 'slop'",
+-  "class_g = 'Polybar'",
+-  "_GTK_FRAME_EXTENTS@:c"
+-];
+-
+-# Specify a X geometry that describes the region in which shadow should not
+-# be painted in, such as a dock window region. Use 
+-#    shadow-exclude-reg = "x10+0+0"
+-# for example, if the 10 pixels on the bottom of the screen should not have shadows painted on.
+-#
+-# shadow-exclude-reg = "" 
+-
+-# Crop shadow of a window fully on a particular Xinerama screen to the screen.
+-# xinerama-shadow-crop = false
+-
+-
+-#################################
+-#           Fading              #
+-#################################
+-
+-# Fade windows in/out when opening/closing and when opacity changes,
+-#  unless no-fading-openclose is used.
+-# fading = false
+-fading = true;
+-
+-# Opacity change between steps while fading in. (0.01 - 1.0, defaults to 0.028)
+-# fade-in-step = 0.028
+-fade-in-step = 0.015;
+-
+-# Opacity change between steps while fading out. (0.01 - 1.0, defaults to 0.03)
+-# fade-out-step = 0.03
+-fade-out-step = 0.1;
+-
+-# The time between steps in fade step, in milliseconds. (> 0, defaults to 10)
+-fade-delta = 10
+-
+-# Specify a list of conditions of windows that should not be faded.
+-# don't need this, we disable fading for all normal windows with wintypes: {}
+-fade-exclude = [
+-  #"class_g = 'slop'"   # maim
+-]
+-
+-# Do not fade on window open/close.
+-# no-fading-openclose = false
+-
+-# Do not fade destroyed ARGB windows with WM frame. Workaround of bugs in Openbox, Fluxbox, etc.
+-# no-fading-destroyed-argb = false
+-
+-
+-#################################
+-#   Transparency / Opacity      #
+-#################################
+-
+-
+-# Opacity of inactive windows. (0.1 - 1.0, defaults to 1.0)
+-# inactive-opacity = 1
+-inactive-opacity = 1;
+-
+-# Opacity of window titlebars and borders. (0.1 - 1.0, disabled by default)
+-# frame-opacity = 1.0
+-frame-opacity = 1.0;
+-
+-# Default opacity for dropdown menus and popup menus. (0.0 - 1.0, defaults to 1.0)
+-# menu-opacity = 1.0
+-
+-# Let inactive opacity set by -i override the '_NET_WM_OPACITY' values of windows.
+-# inactive-opacity-override = true
+-inactive-opacity-override = false;
+-
+-# Default opacity for active windows. (0.0 - 1.0, defaults to 1.0)
+-active-opacity = 1;
+-
+-# Dim inactive windows. (0.0 - 1.0, defaults to 0.0)
+-# inactive-dim = 0.0
+-
+-# Specify a list of conditions of windows that should always be considered focused.
+-# focus-exclude = []
+-focus-exclude = [
+-  "class_g = 'Cairo-clock'",
+-  "class_g = 'Bar'",                    # lemonbar
+-  "class_g = 'slop'"                    # maim
+-];
+-
+-# Use fixed inactive dim value, instead of adjusting according to window opacity.
+-# inactive-dim-fixed = 1.0
+-
+-# Specify a list of opacity rules, in the format `PERCENT:PATTERN`, 
+-# like `50:name *= "Firefox"`. picom-trans is recommended over this. 
+-# Note we don't make any guarantee about possible conflicts with other 
+-# programs that set '_NET_WM_WINDOW_OPACITY' on frame or client windows.
+-# example:
+-#    opacity-rule = [ "80:class_g = 'URxvt'" ];
+-#
+-# opacity-rule = []
+-opacity-rule = [
+-   "100:name     = 'Dunst'",             # lemonbar
+-  "10:class_g    = 'eww-blur_full'",            # maim
+-  #"100:class_g    = 'XTerm'",
+-  #"100:class_g    = 'URxvt'",
+-  "80:class_g    = 'Alacritty'",
+-  #"60:class_g    = 'eww-player'",
+-  "100:class_g    = 'Tint2'"
+-  #"80:class_g     = 'Polybar'",
+-  #"100:class_g    = 'code-oss'",
+-  #"100:class_g    = 'Meld'",
+-  #"70:class_g     = 'TelegramDesktop'",
+-  #"90:class_g     = 'Joplin'",
+-  #"100:class_g    = 'firefox'",
+-  #"80:class_g    = 'Spotify'"
+-];
+-
+-
+-#################################
+-#     Background-Blurring       #
+-#################################
+-
+-
+-# Parameters for background blurring, see the *BLUR* section for more information.
+-# blur-method = "dual_kawase"
+-# blur-size = 12
+-#
+-# blur-deviation = false
+-
+-# Blur background of semi-transparent / ARGB windows. 
+-#
+-# blur-background = true;
+-
+-# Blur background of windows when the window frame is not opaque. 
+-# Implies:
+-#    blur-background 
+-# Bad in performance, with driver-dependent behavior. The name may change.
+-#
+-# blur-background-frame = false;
+-
+-
+-# Use fixed blur strength rather than adjusting according to window opacity.
+-# blur-background-fixed = false;
+-
+-
+-# Specify the blur convolution kernel, with the following format:
+-# example:
+-#   blur-kern = "5,5,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1";
+-#
+-# blur-kern = ''
+-# blur-kern = "3x3box";
+-animations=true;
+-#fade-out-step = 1;
+-fade-delta= 0;
+-
+-#blur: {
+-  # requires: https://github.com/ibhagwan/picom
+- # method = "dual_kawase";
+- # method = "kernel";
+- # strength = 10;
+- # deviation =1.0;
+- # kernel = "11x11gaussian";
+- # background = false;
+- # background-frame = false;
+- # background-fixed = false;
+- # kern = "3x3box";
+- #}
+-
+-# Exclude conditions for background blur.
+-#blur-background-exclude = [
+-#  #"window_type = 'dock'",
+-#  #"window_type = 'desktop'",
+-#  #"class_g = 'URxvt'",
+-#  "class_g = 'dwm'",
+-#  #
+-#  # prevents picom from blurring the background
+-#  # when taking selection screenshot with `main`
+-#  # https://github.com/naelstrof/maim/issues/130
+-#  "class_g = 'slop'",
+-#  "_GTK_FRAME_EXTENTS@:c"
+-#];
+-
+-
+-#################################
+-#       General Settings        #
+-#################################
+-
+-# Daemonize process. Fork to background after initialization. Causes issues with certain (badly-written) drivers.
+-# daemon = false
+-
+-# Specify the backend to use: `xrender`, `glx`, or `xr_glx_hybrid`.
+-# `xrender` is the default one.
+-#
+-experimental-backends = false;
+-backend = "glx";
+-#backend = "xrender";
+-
+-
+-# Enable/disable VSync.
+-# vsync = false
+-vsync = false;
+-
+-# Enable remote control via D-Bus. See the *D-BUS API* section below for more details.
+-# dbus = false
+-
+-# Try to detect WM windows (a non-override-redirect window with no 
+-# child that has 'WM_STATE') and mark them as active.
+-#
+-# mark-wmwin-focused = false
+-mark-wmwin-focused = true;
+-
+-# Mark override-redirect windows that doesn't have a child window with 'WM_STATE' focused.
+-# mark-ovredir-focused = false
+-mark-ovredir-focused = true;
+-
+-# Try to detect windows with rounded corners and don't consider them 
+-# shaped windows. The accuracy is not very high, unfortunately.
+-#
+-# detect-rounded-corners = false
+-detect-rounded-corners = true
+-
+-# Detect '_NET_WM_OPACITY' on client windows, useful for window managers
+-# not passing '_NET_WM_OPACITY' of client windows to frame windows.
+-#
+-# detect-client-opacity = false
+-detect-client-opacity = true;
+-
+-# Specify refresh rate of the screen. If not specified or 0, picom will 
+-# try detecting this with X RandR extension.
+-#
+-# refresh-rate = 60
+-# refresh-rate = 0
+-
+-# Limit picom to repaint at most once every 1 / 'refresh_rate' second to 
+-# boost performance. This should not be used with 
+-#   vsync drm/opengl/opengl-oml
+-# as they essentially does sw-opti's job already, 
+-# unless you wish to specify a lower refresh rate than the actual value.
+-#
+-# sw-opti = 
+-
+-# Use EWMH '_NET_ACTIVE_WINDOW' to determine currently focused window, 
+-# rather than listening to 'FocusIn'/'FocusOut' event. Might have more accuracy, 
+-# provided that the WM supports it.
+-#
+-# use-ewmh-active-win = false
+-
+-# Unredirect all windows if a full-screen opaque window is detected, 
+-# to maximize performance for full-screen windows. Known to cause flickering 
+-# when redirecting/unredirecting windows. paint-on-overlay may make the flickering less obvious.
+-#
+-# unredir-if-possible = false
+-
+-# Delay before unredirecting the window, in milliseconds. Defaults to 0.
+-# unredir-if-possible-delay = 0
+-
+-# Conditions of windows that shouldn't be considered full-screen for unredirecting screen.
+-# unredir-if-possible-exclude = []
+-
+-# Use 'WM_TRANSIENT_FOR' to group windows, and consider windows 
+-# in the same group focused at the same time.
+-#
+-# detect-transient = false
+-detect-transient = true
+-
+-# Use 'WM_CLIENT_LEADER' to group windows, and consider windows in the same 
+-# group focused at the same time. 'WM_TRANSIENT_FOR' has higher priority if 
+-# detect-transient is enabled, too.
+-#
+-# detect-client-leader = false
+-detect-client-leader = true
+-
+-# Resize damaged region by a specific number of pixels. 
+-# A positive value enlarges it while a negative one shrinks it. 
+-# If the value is positive, those additional pixels will not be actually painted 
+-# to screen, only used in blur calculation, and such. (Due to technical limitations, 
+-# with use-damage, those pixels will still be incorrectly painted to screen.) 
+-# Primarily used to fix the line corruption issues of blur, 
+-# in which case you should use the blur radius value here 
+-# (e.g. with a 3x3 kernel, you should use `--resize-damage 1`, 
+-# with a 5x5 one you use `--resize-damage 2`, and so on). 
+-# May or may not work with *--glx-no-stencil*. Shrinking doesn't function correctly.
+-#
+-# resize-damage = 1
+-
+-# Specify a list of conditions of windows that should be painted with inverted color. 
+-# Resource-hogging, and is not well tested.
+-#
+-# invert-color-include = []
+-
+-# GLX backend: Avoid using stencil buffer, useful if you don't have a stencil buffer. 
+-# Might cause incorrect opacity when rendering transparent content (but never 
+-# practically happened) and may not work with blur-background. 
+-# My tests show a 15% performance boost. Recommended.
+-#
+-# glx-no-stencil = false
+-
+-# GLX backend: Avoid rebinding pixmap on window damage. 
+-# Probably could improve performance on rapid window content changes, 
+-# but is known to break things on some drivers (LLVMpipe, xf86-video-intel, etc.).
+-# Recommended if it works.
+-#
+-# glx-no-rebind-pixmap = false
+-
+-# Disable the use of damage information. 
+-# This cause the whole screen to be redrawn everytime, instead of the part of the screen
+-# has actually changed. Potentially degrades the performance, but might fix some artifacts.
+-# The opposing option is use-damage
+-#
+-# no-use-damage = false
+-use-damage = true
+-
+-# Use X Sync fence to sync clients' draw calls, to make sure all draw 
+-# calls are finished before picom starts drawing. Needed on nvidia-drivers 
+-# with GLX backend for some users.
+-#
+-# xrender-sync-fence = false
+-
+-# GLX backend: Use specified GLSL fragment shader for rendering window contents. 
+-# See `compton-default-fshader-win.glsl` and `compton-fake-transparency-fshader-win.glsl` 
+-# in the source tree for examples.
+-#
+-# glx-fshader-win = ''
+-
+-# Force all windows to be painted with blending. Useful if you 
+-# have a glx-fshader-win that could turn opaque pixels transparent.
+-#
+-# force-win-blend = false
+-
+-# Do not use EWMH to detect fullscreen windows. 
+-# Reverts to checking if a window is fullscreen based only on its size and coordinates.
+-#
+-# no-ewmh-fullscreen = false
+-
+-# Dimming bright windows so their brightness doesn't exceed this set value. 
+-# Brightness of a window is estimated by averaging all pixels in the window, 
+-# so this could comes with a performance hit. 
+-# Setting this to 1.0 disables this behaviour. Requires --use-damage to be disabled. (default: 1.0)
+-#
+-# max-brightness = 1.0
+-
+-# Make transparent windows clip other windows like non-transparent windows do,
+-# instead of blending on top of them.
+-#
+-# transparent-clipping = false
+-
+-# Set the log level. Possible values are:
+-#  "trace", "debug", "info", "warn", "error"
+-# in increasing level of importance. Case doesn't matter. 
+-# If using the "TRACE" log level, it's better to log into a file 
+-# using *--log-file*, since it can generate a huge stream of logs.
+-#
+-# log-level = "debug"
+-log-level = "info";
+-
+-# Set the log file.
+-# If *--log-file* is never specified, logs will be written to stderr. 
+-# Otherwise, logs will to written to the given file, though some of the early 
+-# logs might still be written to the stderr. 
+-# When setting this option from the config file, it is recommended to use an absolute path.
+-#
+-# log-file = '/path/to/your/log/file'
+-
+-# Show all X errors (for debugging)
+-# show-all-xerrors = false
+-
+-# Write process ID to a file.
+-# write-pid-path = '/path/to/your/log/file'
+-
+-# Window type settings
+-# 
+-# 'WINDOW_TYPE' is one of the 15 window types defined in EWMH standard: 
+-#     "unknown", "desktop", "dock", "toolbar", "menu", "utility", 
+-#     "splash", "dialog", "normal", "dropdown_menu", "popup_menu", 
+-#     "tooltip", "notification", "combo", and "dnd".
+-# 
+-# Following per window-type options are available: ::
+-# 
+-#   fade, shadow:::
+-#     Controls window-type-specific shadow and fade settings.
+-# 
+-#   opacity:::
+-#     Controls default opacity of the window type.
+-# 
+-#   focus:::
+-#     Controls whether the window of this type is to be always considered focused. 
+-#     (By default, all window types except "normal" and "dialog" has this on.)
+-# 
+-#   full-shadow:::
+-#     Controls whether shadow is drawn under the parts of the window that you 
+-#     normally won't be able to see. Useful when the window has parts of it 
+-#     transparent, and you want shadows in those areas.
+-# 
+-#   redir-ignore:::
+-#     Controls whether this type of windows should cause screen to become 
+-#     redirected again after been unredirected. If you have unredir-if-possible
+-#     set, and doesn't want certain window to cause unnecessary screen redirection, 
+-#     you can set this to `true`.
+-#
+-wintypes:
+-{
+-  normal = { full-shadow = true; };
+-  menu = { full-shadow = true; };
+-  tooltip = { fade = true; shadow = false; focus = true;};
+-  dock = { shadow = false; };
+-  dnd = { shadow = false; };
+-  popup_menu = { full-shadow = true; };
+-  utility = { full-shadow = true; };
+-  toolbar = { full-shadow = true; };
+-  notification = { opacity = 1; }
+-};
+diff --git a/sx/.config/sx/sxrc b/sx/.config/sx/sxrc
+deleted file mode 100755
+index 1cc7941..0000000
+--- a/sx/.config/sx/sxrc
++++ /dev/null
+@@ -1,6 +0,0 @@
+-#!/usr/bin/env bash
+-xrandr --output Virtual-1 --mode 1920x1080
+-slstatus &
+-~/.fehbg
+-picom -b
+-exec dwm
+diff --git a/systemconfig/config.scm b/systemconfig/config.scm
+old mode 100755
+new mode 100644
+index 24e81dc..a63aefa
+--- a/systemconfig/config.scm
++++ b/systemconfig/config.scm
+@@ -9,19 +9,14 @@
+ 
+ ;; Indicate which modules to import to access the variables
+ ;; used in this configuration.
+-(use-modules (gnu)
+-             (gnu services xorg)
+-             (chuccle-channel environment chuccle-de)
+-)
+-
++(use-modules (gnu))
+ (use-service-modules cups desktop networking ssh xorg)
+-(use-package-modules emacs suckless xdisorg)
+ 
+ (operating-system
+   (locale "en_GB.utf8")
+   (timezone "Europe/London")
+   (keyboard-layout (keyboard-layout "gb"))
+-  (host-name "GUIX")
++  (host-name "UNIXISM")
+ 
+   ;; The list of user accounts ('root' is implicit).
+   (users (cons* (user-account
+@@ -32,36 +27,26 @@
+                   (supplementary-groups '("wheel" "netdev" "audio" "video")))
+                 %base-user-accounts))
+ 
++  ;; Packages installed system-wide.  Users can also install packages
++  ;; under their own account: use 'guix search KEYWORD' to search
++  ;; for packages and 'guix install PACKAGE' to install a package.
++  (packages (append (list (specification->package "nss-certs"))
++                    %base-packages))
+ 
+-
+-  (packages (append (list
+-                     emacs
+-		                 chuccle-st
+-		                 chuccle-dwm
+-                     chuccle-dmenu
+-                     sx
+-                     slstatus
+-                     (specification->package "nss-certs"))
+-                   %base-packages))
+-
+-  (services
+-   (cons*
+-            ;; Define the lightdm-service-type
+-            (service xorg-server-service-type
+-              (xorg-configuration
+-	             (keyboard-layout keyboard-layout)))
+-	    
+-	    (modify-services %desktop-services
++  ;; Below is the list of system services.  To search for available
++  ;; services, run 'guix system search KEYWORD' in a terminal.
++ (services
++   (cons* (modify-services %desktop-services
+               (delete gdm-service-type))))
+-	  
+-
++	
+   (bootloader (bootloader-configuration
+                 (bootloader grub-bootloader)
+                 (targets (list "/dev/sda"))
+                 (keyboard-layout keyboard-layout)))
++  (initrd-modules (append '("virtio_scsi") %base-initrd-modules))
+   (mapped-devices (list (mapped-device
+                           (source (uuid
+-                                   "ea6fd892-e445-4b0a-a803-01b36b06a13a"))
++                                   "b0d2a25a-be50-4762-b00f-fff293ebb8f1"))
+                           (target "cryptroot")
+                           (type luks-device-mapping))))
+ 
+diff --git a/xsession/dot-xsession b/xsession/dot-xsession
+deleted file mode 100755
+index 129ad6e..0000000
+--- a/xsession/dot-xsession
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#!/usr/bin/env bash
+-
+-# edit this file to modify home 
+-xrandr --output Virtual-1 --mode 1920x1080
+-~/.fehbg
+-slstatus &
+-exec dwm
+--
+libgit2 1.5.2
+
